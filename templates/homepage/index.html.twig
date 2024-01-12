@@ -1,0 +1,49 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Hello HomepageController!{% endblock %}
+
+{% block body %}
+<div class="background" id="nebula_element"></div>
+<div class="section-wrapper">
+    <section class="section-1" id="section-1">
+        <div class="card">
+            <h1 class="main-logo">STOOM</h1>
+            <div class="temp-wrapper">
+                <button class="big-button sign-in">Sign In</button>
+                <button class="big-button sign-up">Sign Up</button>
+            </div>
+            <div class="jump-to-wrapper">
+                <a class="jump-to" href="#section-2">About Stoom</a>
+                <svg class="underline" 
+                    viewbox="0 0 100 4"
+                    width="207px"
+                    stroke="var(--secondary-accent-color)">
+
+                        <line class="line line-left"
+                            x1="0" x2="51" y1="0" y2="0"
+                            stroke-width="1"
+                            stroke-dasharray="51"
+                            stroke-dashoffset="-51">
+                        </line>
+
+                        <line class="line line-right"
+                            x1="49" x2="100" y1="0" y2="0"
+                            stroke-width="1"
+                            stroke-dasharray="51"
+                            stroke-dashoffset="51">
+                        </line>
+                </svg>
+                <svg viewbox="0 0 100 100" stroke="var(--secondary-accent-color" fill="none" width="2rem">
+                    <path stroke-width="4" d="m 0 0 l 50 40 l 50 -40"></path>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-2" id="section-2">
+        <p>
+            Lorem ipsum dolor sit amet, officia excepteur ex fugiat reprehenderit enim labore culpa sint ad nisi Lorem pariatur mollit ex esse exercitation amet. Nisi anim cupidatat excepteur officia. Reprehenderit nostrud nostrud ipsum Lorem est aliquip amet voluptate voluptate dolor minim nulla est proident. Nostrud officia pariatur ut officia. Sit irure elit esse ea nulla sunt ex occaecat reprehenderit commodo officia dolor Lorem duis laboris cupidatat officia voluptate. Culpa proident adipisicing id nulla nisi laboris ex in Lorem sunt duis officia eiusmod. Aliqua reprehenderit commodo ex non excepteur duis sunt velit enim. Voluptate laboris sint cupidatat ullamco ut ea consectetur et est culpa et culpa duis.
+        </p>
+    </section>
+</div>
+{% endblock %}

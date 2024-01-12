@@ -1,4 +1,4 @@
-import './bootstrap.js';
+import './bootstrap.js'
 /*
  * Welcome to your app's main JavaScript file!
  *
@@ -7,4 +7,20 @@ import './bootstrap.js';
  */
 import './styles/app.css'
 
-console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉')
+// for nebula on homescreen
+import { createNebula } from '@flodlc/nebula';
+
+const element = document.getElementById("nebula-element");
+
+const nebula = createNebula(element, {
+    starsCount: 490,
+    startsColor: "#FFFFFF",
+    starsRotationSpeed: 3,
+    cometFrequence: 100,
+    nebulasIntensity: 11,
+    bgColor: "rgb(8,8,8)",
+    sunScale: 0,
+    planetsScale: 0,
+    solarSystemOrbite: 0,
+    solarSystemSpeedOrbit: 0
+});
