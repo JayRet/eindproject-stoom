@@ -27,13 +27,4 @@ return [
     '@hotwired/turbo' => [
         'version' => '7.3.0',
     ],
-    '@flodlc/nebula' => [
-        'version' => '1.0.56',
-    ],
-    'react' => [
-        'version' => '17.0.2',
-    ],
-    'object-assign' => [
-        'version' => '4.1.1',
-    ],
 ];

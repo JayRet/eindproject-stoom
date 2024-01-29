@@ -21,10 +21,17 @@
 
 ###> symfony/asset-mapper ###
 /public/assets/
-/assets/vendor
+/assets/vendor/
 ###< symfony/asset-mapper ###
 
+# dont send env file
+/.env
 .env
-.envrc
+
+# dont send mysql db
 /mysql
-/node_modules
+mysql
+
+# dont send .devenv file
+.devenv
+/.devenv
