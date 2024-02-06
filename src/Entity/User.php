@@ -7,10 +7,13 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
+#[UniqueEntity(fields: ['email'], message: 'There is already an account with this email')]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
@@ -19,7 +22,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     #[ORM\Column(length: 180, unique: true)]
-    private ?string $username = null;
+    private ?string $email = null;
 
     #[ORM\Column]
     private array $roles = [];
@@ -36,34 +39,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
     private ?int $gender = null;
 
-    #[ORM\Column(length: 190, nullable: true)]
-    private ?string $profilePicture = null;
+    #[ORM\Column(length: 255)]
+    private ?string $name = null;
 
-    #[ORM\Column(type: Types::SMALLINT)]
-    private ?int $status = null;
+    #[ORM\Column(type: 'uuid')]
+    private ?Uuid $uuid = null;
 
-    #[ORM\OneToMany(mappedBy: 'creator', targetEntity: Game::class)]
-    private Collection $games;
-
-    #[ORM\OneToMany(mappedBy: 'receiver', targetEntity: Message::class)]
-    private Collection $messages;
-
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Score::class)]
-    private Collection $scores;
-
-    #[ORM\OneToMany(mappedBy: 'user1', targetEntity: Friend::class)]
-    private Collection $friends;
-
-    #[ORM\OneToMany(mappedBy: 'user', targetEntity: UserGameData::class, orphanRemoval: true)]
-    private Collection $userGameData;
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: OAuth2UserConsent::class, orphanRemoval: true)]
+    private Collection $oAuth2UserConsents;
 
     public function __construct()
     {
-        $this->games = new ArrayCollection();
-        $this->messages = new ArrayCollection();
-        $this->scores = new ArrayCollection();
-        $this->friends = new ArrayCollection();
-        $this->userGameData = new ArrayCollection();
+        $this->oAuth2UserConsents = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -71,14 +58,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->id;
     }
 
-    public function getUsername(): ?string
+    public function getEmail(): ?string
     {
-        return $this->username;
+        return $this->email;
     }
 
-    public function setUsername(string $username): static
+    public function setEmail(string $email): static
     {
-        $this->username = $username;
+        $this->email = $email;
 
         return $this;
     }
@@ -90,7 +77,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUserIdentifier(): string
     {
-        return (string) $this->username;
+        return (string) $this->uuid->toRfc4122();
     }
 
     /**
@@ -160,174 +147,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getProfilePicture(): ?string
+    public function getName(): ?string
     {
-        return $this->profilePicture;
+        return $this->name;
     }
 
-    public function setProfilePicture(?string $profilePicture): static
+    public function setName(string $name): static
     {
-        $this->profilePicture = $profilePicture;
+        $this->name = $name;
 
         return $this;
     }
 
-    public function getStatus(): ?int
+    public function getUuid(): ?Uuid
     {
-        return $this->status;
+        return $this->uuid;
     }
 
-    public function setStatus(int $status): static
+    public function setUuid(Uuid $uuid): static
     {
-        $this->status = $status;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Game>
-     */
-    public function getGames(): Collection
-    {
-        return $this->games;
-    }
-
-    public function addGame(Game $game): static
-    {
-        if (!$this->games->contains($game)) {
-            $this->games->add($game);
-            $game->setCreator($this);
-        }
-
-        return $this;
-    }
-
-    public function removeGame(Game $game): static
-    {
-        if ($this->games->removeElement($game)) {
-            // set the owning side to null (unless already changed)
-            if ($game->getCreator() === $this) {
-                $game->setCreator(null);
-            }
-        }
+        $this->uuid = $uuid;
 
         return $this;
     }
 
     /**
-     * @return Collection<int, Message>
+     * @return Collection<int, OAuth2UserConsent>
      */
-    public function getMessages(): Collection
+    public function getOAuth2UserConsents(): Collection
     {
-        return $this->messages;
+        return $this->oAuth2UserConsents;
     }
 
-    public function addMessage(Message $message): static
+    public function addOAuth2UserConsent(OAuth2UserConsent $oAuth2UserConsent): static
     {
-        if (!$this->messages->contains($message)) {
-            $this->messages->add($message);
-            $message->setReceiver($this);
+        if (!$this->oAuth2UserConsents->contains($oAuth2UserConsent)) {
+            $this->oAuth2UserConsents->add($oAuth2UserConsent);
+            $oAuth2UserConsent->setUser($this);
         }
 
         return $this;
     }
 
-    public function removeMessage(Message $message): static
+    public function removeOAuth2UserConsent(OAuth2UserConsent $oAuth2UserConsent): static
     {
-        if ($this->messages->removeElement($message)) {
+        if ($this->oAuth2UserConsents->removeElement($oAuth2UserConsent)) {
             // set the owning side to null (unless already changed)
-            if ($message->getReceiver() === $this) {
-                $message->setReceiver(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Score>
-     */
-    public function getScores(): Collection
-    {
-        return $this->scores;
-    }
-
-    public function addScore(Score $score): static
-    {
-        if (!$this->scores->contains($score)) {
-            $this->scores->add($score);
-            $score->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeScore(Score $score): static
-    {
-        if ($this->scores->removeElement($score)) {
-            // set the owning side to null (unless already changed)
-            if ($score->getUser() === $this) {
-                $score->setUser(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, Friend>
-     */
-    public function getFriends(): Collection
-    {
-        return $this->friends;
-    }
-
-    public function addFriend(Friend $friend): static
-    {
-        if (!$this->friends->contains($friend)) {
-            $this->friends->add($friend);
-            $friend->setUser1($this);
-        }
-
-        return $this;
-    }
-
-    public function removeFriend(Friend $friend): static
-    {
-        if ($this->friends->removeElement($friend)) {
-            // set the owning side to null (unless already changed)
-            if ($friend->getUser1() === $this) {
-                $friend->setUser1(null);
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, UserGameData>
-     */
-    public function getUserGameData(): Collection
-    {
-        return $this->userGameData;
-    }
-
-    public function addUserGameData(UserGameData $userGameData): static
-    {
-        if (!$this->userGameData->contains($userGameData)) {
-            $this->userGameData->add($userGameData);
-            $userGameData->setUser($this);
-        }
-
-        return $this;
-    }
-
-    public function removeUserGameData(UserGameData $userGameData): static
-    {
-        if ($this->userGameData->removeElement($userGameData)) {
-            // set the owning side to null (unless already changed)
-            if ($userGameData->getUser() === $this) {
-                $userGameData->setUser(null);
+            if ($oAuth2UserConsent->getUser() === $this) {
+                $oAuth2UserConsent->setUser(null);
             }
         }
 

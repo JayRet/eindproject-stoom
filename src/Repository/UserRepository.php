@@ -8,6 +8,7 @@ use Doctrine\Persistence\ManagerRegistry;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\PasswordUpgraderInterface;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @extends ServiceEntityRepository<User>
@@ -40,6 +41,19 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         $this->getEntityManager()->flush();
     }
 
+    public function loadUserByIdentifier(string $identifier): ?User
+{
+    $entityManager = $this->getEntityManager();
+
+    // Check if the identifier is an email address
+    if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+        return $this->findOneBy(['email' => $identifier]);
+    }
+    if (Uuid::isValid($identifier)) {
+        return $this->findOneBy(['uuid' => Uuid::fromString($identifier)->toBinary()]);
+    }
+    return null;
+}
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */

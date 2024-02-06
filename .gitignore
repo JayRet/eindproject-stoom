@@ -35,3 +35,9 @@ mysql
 # dont send .devenv file
 .devenv
 /.devenv
+
+###> league/oauth2-server-bundle ###
+/config/jwt/*.pem
+###< league/oauth2-server-bundle ###
+
+/var/keys/*.key

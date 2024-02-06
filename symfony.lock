@@ -26,6 +26,31 @@
             "migrations/.gitignore"
         ]
     },
+    "league/oauth2-server-bundle": {
+        "version": "0.6",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "0.4",
+            "ref": "7f26963037fce3b69c1b3f6a75a3265edb1e1caa"
+        },
+        "files": [
+            "config/packages/league_oauth2_server.yaml",
+            "config/routes/league_oauth2_server.yaml"
+        ]
+    },
+    "nyholm/psr7": {
+        "version": "1.8",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "1.0",
+            "ref": "4a8c0345442dcca1d8a2c65633dcf0285dd5a5a2"
+        },
+        "files": [
+            "config/packages/nyholm_psr7.yaml"
+        ]
+    },
     "phpunit/phpunit": {
         "version": "9.6",
         "recipe": {
@@ -46,7 +71,7 @@
             "repo": "github.com/symfony/recipes",
             "branch": "main",
             "version": "6.4",
-            "ref": "7824128ef0da56f09a376539d00a17e23e9b5054"
+            "ref": "4ff49f66191ce9356098e588684c27b935958b33"
         },
         "files": [
             "assets/app.js",
@@ -123,7 +148,7 @@
         ]
     },
     "symfony/maker-bundle": {
-        "version": "1.52",
+        "version": "1.53",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -209,7 +234,7 @@
         ]
     },
     "symfony/stimulus-bundle": {
-        "version": "2.13",
+        "version": "2.14",
         "recipe": {
             "repo": "github.com/symfony/recipes",
             "branch": "main",
@@ -248,8 +273,17 @@
             "templates/base.html.twig"
         ]
     },
+    "symfony/uid": {
+        "version": "7.0",
+        "recipe": {
+            "repo": "github.com/symfony/recipes",
+            "branch": "main",
+            "version": "7.0",
+            "ref": "0df5844274d871b37fc3816c57a768ffc60a43a5"
+        }
+    },
     "symfony/ux-turbo": {
-        "version": "v2.13.2"
+        "version": "v2.14.0"
     },
     "symfony/validator": {
         "version": "7.0",
