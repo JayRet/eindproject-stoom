@@ -49,9 +49,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: OAuth2UserConsent::class, orphanRemoval: true)]
     private Collection $oAuth2UserConsents;
 
+    #[ORM\OneToMany(mappedBy: 'creator', targetEntity: Game::class)]
+    private Collection $games;
+
+    #[ORM\OneToMany(mappedBy: 'sender', targetEntity: Friend::class, orphanRemoval: true)]
+    private Collection $friends;
+
     public function __construct()
     {
         $this->oAuth2UserConsents = new ArrayCollection();
+        $this->games = new ArrayCollection();
+        $this->friends = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -189,6 +197,66 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             // set the owning side to null (unless already changed)
             if ($oAuth2UserConsent->getUser() === $this) {
                 $oAuth2UserConsent->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Game>
+     */
+    public function getGames(): Collection
+    {
+        return $this->games;
+    }
+
+    public function addGame(Game $game): static
+    {
+        if (!$this->games->contains($game)) {
+            $this->games->add($game);
+            $game->setCreator($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGame(Game $game): static
+    {
+        if ($this->games->removeElement($game)) {
+            // set the owning side to null (unless already changed)
+            if ($game->getCreator() === $this) {
+                $game->setCreator(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Friend>
+     */
+    public function getFriends(): Collection
+    {
+        return $this->friends;
+    }
+
+    public function addFriend(Friend $friend): static
+    {
+        if (!$this->friends->contains($friend)) {
+            $this->friends->add($friend);
+            $friend->setSender($this);
+        }
+
+        return $this;
+    }
+
+    public function removeFriend(Friend $friend): static
+    {
+        if ($this->friends->removeElement($friend)) {
+            // set the owning side to null (unless already changed)
+            if ($friend->getSender() === $this) {
+                $friend->setSender(null);
             }
         }
 

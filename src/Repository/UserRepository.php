@@ -42,18 +42,20 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
     }
 
     public function loadUserByIdentifier(string $identifier): ?User
-{
-    $entityManager = $this->getEntityManager();
+    {
+        $entityManager = $this->getEntityManager();
 
-    // Check if the identifier is an email address
-    if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
-        return $this->findOneBy(['email' => $identifier]);
+        // Check if the identifier is an email address
+        if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+            return $this->findOneBy(['email' => $identifier]);
+        }
+        if (Uuid::isValid($identifier)) {
+            return $this->findOneBy(['uuid' => Uuid::fromString($identifier)->toBinary()]);
+        }
+        return null;
     }
-    if (Uuid::isValid($identifier)) {
-        return $this->findOneBy(['uuid' => Uuid::fromString($identifier)->toBinary()]);
-    }
-    return null;
-}
+
+
 //    /**
 //     * @return User[] Returns an array of User objects
 //     */
