@@ -3,6 +3,7 @@
 namespace App\Entity;
 
 use App\Repository\GameRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Mime\Part\File;
 use Symfony\Component\String\Slugger\AsciiSlugger;
@@ -10,25 +11,22 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 #[ORM\Entity(repositoryClass: GameRepository::class)]
 class Game
 {
-    protected File $picture;
+    protected File $imageFilename;
 
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
     private ?string $name = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 1000)]
     private ?string $description = null;
 
     #[ORM\OneToOne(cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     private ?OAuth2ClientProfile $OAuth2ClientProfile = null;
-
-    #[ORM\Column(length: 255)]
-    private ?string $picturePath = null;
 
     #[ORM\Column(length: 255)]
     private ?string $url = null;
@@ -37,11 +35,17 @@ class Game
     #[ORM\JoinColumn(nullable: false)]
     private ?User $creator = null;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, unique: true)]
     private ?string $slug = null;
 
-    public function __construct() {
-        // $this->setOAuth2ClientProfile(new OAuth2ClientProfile());
+    public function __construct(User $user, EntityManagerInterface $entityManager)
+    {
+        $this->setCreator($user);
+
+        $OAuth2ClientProfile = new OAuth2ClientProfile();
+        $this->setOAuth2ClientProfile($OAuth2ClientProfile);
+        $entityManager->persist($OAuth2ClientProfile);
+        $entityManager->flush();
     }
 
     public function getId(): ?int
@@ -79,21 +83,21 @@ class Game
         return $this->OAuth2ClientProfile;
     }
 
-    public function setOAuth2ClientProfile(OAuth2ClientProfile $OAuth2ClientProfile): static
+    private function setOAuth2ClientProfile(OAuth2ClientProfile $OAuth2ClientProfile): static
     {
         $this->OAuth2ClientProfile = $OAuth2ClientProfile;
 
         return $this;
     }
 
-    public function getPicture(): ?string
+    public function getImageFilename(): ?string
     {
         return $this->picture;
     }
 
-    public function setPicture(File $picture = null): static
+    public function setImageFilename(File $imageFile = null): static
     {
-        $this->picture = $picture;
+        $this->imageFilename = $imageFile;
 
         return $this;
     }
@@ -115,7 +119,7 @@ class Game
         return $this->creator;
     }
 
-    public function setCreator(?User $creator): static
+    private function setCreator(?User $creator): static
     {
         $this->creator = $creator;
 

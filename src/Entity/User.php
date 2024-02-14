@@ -55,11 +55,15 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'sender', targetEntity: Friend::class, orphanRemoval: true)]
     private Collection $friends;
 
+    #[ORM\ManyToMany(targetEntity: Conversation::class, mappedBy: 'user')]
+    private Collection $conversations;
+
     public function __construct()
     {
         $this->oAuth2UserConsents = new ArrayCollection();
         $this->games = new ArrayCollection();
         $this->friends = new ArrayCollection();
+        $this->conversations = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -258,6 +262,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
             if ($friend->getSender() === $this) {
                 $friend->setSender(null);
             }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Conversation>
+     */
+    public function getConversations(): Collection
+    {
+        return $this->conversations;
+    }
+
+    public function addConversation(Conversation $conversation): static
+    {
+        if (!$this->conversations->contains($conversation)) {
+            $this->conversations->add($conversation);
+            $conversation->addUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeConversation(Conversation $conversation): static
+    {
+        if ($this->conversations->removeElement($conversation)) {
+            $conversation->removeUser($this);
         }
 
         return $this;

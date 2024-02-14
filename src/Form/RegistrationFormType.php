@@ -16,13 +16,28 @@ use Symfony\Component\Validator\Constraints\EmailValidator;
 use Symfony\Component\Validator\Constraints\IsTrue;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
+use Symfony\Component\Validator\Constraints\Regex;
 
 class RegistrationFormType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('name')
+            ->add('name', [
+                new NotBlank([
+                    'message' => 'Please enter a username',
+                ]),
+                new Regex([
+                    'pattern' => '/^[a-zA-Z0-9]+$/',
+                    'message' => 'Your username can only contain letters and numbers',
+                ]),
+                new Length([
+                    'min' => 3,
+                    'minMessage' => 'Your username should be at least {{ limit }} characters long',
+                    'max' => 32,
+                    'maxMessage' => 'Your username cannot be longer than {{ limit }} characters',
+                ]),
+            ])
             ->add('email', EmailType::class, [
                 'constraints' => [
                     new NotBlank([

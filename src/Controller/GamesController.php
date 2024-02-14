@@ -3,9 +3,9 @@
 namespace App\Controller;
 
 use App\Entity\Game;
-use App\Entity\OAuth2ClientProfile;
 use App\Entity\User;
-use App\Form\GameType;
+use App\Form\GameFormType;
+use App\Repository\GameRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,16 +15,23 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class GamesController extends AbstractController
 {
+    private $gameRepository;
+
+    public function __construct(GameRepository $gameRepository) // QUESTION: ask koen if this is a bad practice
+    {
+        $this->gameRepository = $gameRepository;
+    }
+
     #[Route('/games', name: 'app_games')]
     public function index(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
     {
-        $repository = $entityManager->getRepository(Game::class);
+        // $repository = $entityManager->getRepository(Game::class); // DELETE: if __construct method is not a bad practice
+        $games = $this->gameRepository->findAllVisable($user); // NOTE: might not work -> check the DELETE comment
 
         if ($request->request->get('game'))
         {
             $gameSlug = $request->request->get('game');
-            $game = $repository->findOneBy(['slug' => $gameSlug]);
-            $games = $repository->findAllVisable($user); // QUESTION: make a repository service so this error goes away -> ask koen
+            $game = $this->gameRepository->findOneBy(['slug' => $gameSlug]);
 
             if ($request->query->get('play') && in_array($game, $games))
             {
@@ -48,23 +55,14 @@ class GamesController extends AbstractController
     #[Route('/games/new', name: 'app_games_new')]
     public function newGame(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
     {
-        $game = new Game();
-        $OAuth2ClientProfile = new OAuth2ClientProfile();
-
-        $game->setOAuth2ClientProfile($OAuth2ClientProfile);
-        $game->setCreator($user);
-        $game->setSlug(); // QUESTION: ask koen if this can be done inside the entity itself -> inside the constructor
-
-        $OAuth2Client = $game->getOAuth2ClientProfile()->getClient();
-        $OAuth2ClientId = $OAuth2Client->getIdentifier();
-        // $OAuth2ClientSecret = $OAuth2Client->getSecret(); // in case of a client secret
-
-        $form = $this->createForm(GameType::class, $game);
+        $game = new Game($user);
+        $form = $this->createForm(GameFormType::class, $game);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($game, $OAuth2ClientProfile);
-            $entityManager->flush();
+            $OAuth2Client = $game->getOAuth2ClientProfile()->getClient();
+            $OAuth2ClientId = $OAuth2Client->getIdentifier();
+            // $OAuth2ClientSecret = $OAuth2Client->getSecret(); // in case of a client secret
         }
 
         // TODO: create a form for creating games
@@ -79,12 +77,12 @@ class GamesController extends AbstractController
     #[Route('/games/{game}', name: 'app_games_game')]
     public function game(Request $request, EntityManagerInterface $entityManager, string $gameSlug, #[CurrentUser] User $user): Response
     {
-        $repository = $entityManager->getRepository(Game::class);
-        $game = $repository->findOneBy(['slug' => $gameSlug]);
+        // $repository = $entityManager->getRepository(Game::class); // DELETE: same as before
+        $game = $this->gameRepository->findOneBy(['slug' => $gameSlug]);
 
         // for editing the game when the user is the creator
-        if ($user === $game->getCreator() && (!$request->query->get('user_mode'))) {
-            $form = $this->createForm(GameType::class, $game);
+        if ($user === $game->getCreator() && (!$request->query->get('user_mode'))) { // QUESTION: does this work
+            $form = $this->createForm(GameFormType::class, $game);
             $form->handleRequest($request);
 
             if ($form->isSubmitted() && $form->isValid()) {
