@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create a game{% endblock %}
+
+{% block body %}
+    <h1>Create a new game</h1>
+
+    <button type="submit" class="btn">User mode</button>
+
+    {{ form_errors(gameForm) }}
+
+    {{ form_start(gameForm) }}
+        {{ form_row(gameForm.name) }}
+        {{ form_row(gameForm.description }}
+        {{ form_row(gameForm.imageFile }}
+        {{ form_row(gameForm.url }}
+
+        <button type="submit" class="btn">Make game</button>
+    {{ form_end(gameForm) }}
+{% endblock %}

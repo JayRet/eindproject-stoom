@@ -8,6 +8,7 @@ use App\Form\GameFormType;
 use App\Repository\GameRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
@@ -16,17 +17,18 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 class GamesController extends AbstractController
 {
     private $gameRepository;
+    private $security;
 
-    public function __construct(GameRepository $gameRepository) // QUESTION: ask koen if this is a bad practice
+    public function __construct(GameRepository $gameRepository, Security $security)
     {
+        $this->security = $security;
         $this->gameRepository = $gameRepository;
     }
 
     #[Route('/games', name: 'app_games')]
     public function index(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
     {
-        // $repository = $entityManager->getRepository(Game::class); // DELETE: if __construct method is not a bad practice
-        $games = $this->gameRepository->findAllVisable($user); // NOTE: might not work -> check the DELETE comment
+        $games = $this->gameRepository->findAllVisable($user);
 
         if ($request->request->get('game'))
         {
@@ -63,9 +65,11 @@ class GamesController extends AbstractController
             $OAuth2Client = $game->getOAuth2ClientProfile()->getClient();
             $OAuth2ClientId = $OAuth2Client->getIdentifier();
             // $OAuth2ClientSecret = $OAuth2Client->getSecret(); // in case of a client secret
+            
+            $entityManager->persist($game);
+            $entityManager->flush();
         }
 
-        // TODO: create a form for creating games
         return $this->render('games/new.html.twig', [
             'title' => 'Create a new game',
             'gameForm' => $form->createView(),
@@ -77,26 +81,29 @@ class GamesController extends AbstractController
     #[Route('/games/{game}', name: 'app_games_game')]
     public function game(Request $request, EntityManagerInterface $entityManager, string $gameSlug, #[CurrentUser] User $user): Response
     {
-        // $repository = $entityManager->getRepository(Game::class); // DELETE: same as before
         $game = $this->gameRepository->findOneBy(['slug' => $gameSlug]);
 
-        // for editing the game when the user is the creator
-        if ($user === $game->getCreator() && (!$request->query->get('user_mode'))) { // QUESTION: does this work
-            $form = $this->createForm(GameFormType::class, $game);
-            $form->handleRequest($request);
+        if ($request->query->get('editing_mode')) {
+            // check if user is the creator or admin
+            if ($user === $game->getCreator() || $this->security->isGranted('ROLE_ADMIN')) {
 
-            if ($form->isSubmitted() && $form->isValid()) {
-                $entityManager->persist($game);
-                $entityManager->flush();
+                $form = $this->createForm(GameFormType::class, $game);
+                $form->handleRequest($request);
 
-                return $this->redirectToRoute('app_games_game', ['game' => $gameSlug]);
+                if ($form->isSubmitted() && $form->isValid()) {
+                    $entityManager->persist($game);
+                    $entityManager->flush();
+
+                    return $this->redirectToRoute('app_games_game', ['game' => $gameSlug]);
+                }
+
+                // TODO: same form as creating the game, but filled in with existing values
+                return $this->render('games/new.html.twig', [
+                    'title' => 'Edit ' + $game->getName(),
+                    'editingMode' => true,
+                    'gameForm' => $form->createView(),
+                ]); 
             }
-
-            // TODO: same form as creating the game, but filled in with existing values
-            return $this->render('games/new.html.twig', [
-                'title' => 'Edit ' + $game->getName(),
-                'gameForm' => $form->createView(),
-            ]); 
         }
 
         return $this->render('games/game.html.twig', [

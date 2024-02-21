@@ -5,6 +5,7 @@ namespace App\Form;
 use App\Entity\Game;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Component\Validator\Constraints\File;
@@ -31,7 +32,7 @@ class GameFormType extends AbstractType
                     'maxMessage' => 'Please limit your name to {{ limit }} characters',
                 ])
             ])
-            ->add('description', [
+            ->add('description', TextType::class, [
                 new NoSuspiciousCharacters([
                     'message' => 'Some characters in the description cannot be used',
                 ]),
