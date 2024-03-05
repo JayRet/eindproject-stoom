@@ -1,1 +1,31 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block body %}
+    <h1>{{ title }}</h1>
+
+    {{ form_errors(gameForm) }}
+
+    {{ form_start(gameForm) }}
+        {{ form_row(gameForm.name) }}
+
+        {{ form_row(gameForm.imageFile, {
+            label: 'import game image'
+        }) }}
+        <div class="image-preview"></div>
+
+        {{ form_row(gameForm.url) }}
+
+        <div id="api-key">{{ OAuth2ClientId }}</div><!-- <button id="api-key-hider btn">show</button> -->
+
+        {% from "common/scripts/js_macros.html.twig" import imagePreview %}
+        {{ imagePreview('image-preview') }}
+
+        {{ form_rest(gameForm) }}
+
+        <button type="submit" class="btn">Save game</button>
+    {{ form_end(gameForm) }}
+    <button type="submit" name="play" value='true'>Play game</button>
+{% endblock %}
 

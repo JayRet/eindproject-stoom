@@ -2,11 +2,11 @@
 
 namespace App\Entity;
 
-use App\Repository\FriendRepository;
+use App\Repository\FriendRequestRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\Entity(repositoryClass: FriendRepository::class)]
-class Friend
+#[ORM\Entity(repositoryClass: FriendRequestRepository::class)]
+class FriendRequest
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -24,8 +24,13 @@ class Friend
     #[ORM\Column]
     private ?bool $accepted = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $dateAccepted = null;
+
+    public function __construct(User $sender, User $receiver)
+    {
+        $this->setSender($sender)->setReceiver($receiver)->setAccepted(false);
+    }
 
     public function getId(): ?int
     {
@@ -64,6 +69,10 @@ class Friend
     public function setAccepted(bool $accepted): static
     {
         $this->accepted = $accepted;
+        if ($accepted) {
+            $this->sender->addFriend($this->receiver);
+            $this->receiver->addFriend($this->sender);
+        }
 
         return $this;
     }

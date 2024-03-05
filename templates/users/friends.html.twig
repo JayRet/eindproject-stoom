@@ -1,0 +1,14 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Friends{% endblock %}
+
+{% block body %}
+    {% for friend in friends %}
+            <img src="{{ asset(friend.imagePath) }}"/>
+            <h3>{{ friend.name }}</h3>
+    {% else %}
+        <h1>No friends have been found.(haha loser)</h1>
+        <a href="{{ path('app_users') }}>find some friends</a>
+    {% endfor %}
+{% endblock %}
+

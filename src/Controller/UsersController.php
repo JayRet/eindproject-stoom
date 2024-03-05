@@ -2,7 +2,10 @@
 
 namespace App\Controller;
 
+use App\Entity\Conversation;
+use App\Entity\Message;
 use App\Entity\User;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,19 +16,38 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 class UsersController extends AbstractController
 {
     #[Route('/users', name: 'app_users')]
-    public function index(Request $request,EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
+    public function index(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user, UserRepository $userRepository): Response
     {
-        $repository = $entityManager->getRepository(User::class);
-        $users = $repository->findBy(['blockStatus' => 2]); // 2 is socialy blocked TODO: make cleaner FIX: this doesnt work
+        $users = $userRepository->findAllUsersExluding($user);
 
-        if ($request)
-        {
-            $friendName = $request->query->get('requested_friend');
-            $friend = $repository->findOneBy(['username' => $friendName]);
-            $user->addFriend($friend);
+        if ($request->isMethod('post')) {
+            $requestedFriendName = $request->request->get('requested_friend');
+            $requestedFriend = $userRepository->findOneBy(['name' => $requestedFriendName]);
 
-            $entityManager->persist($user); // QUESTION: ask koen if this is necesary
-            $entityManager->flush();
+            $friendRequestExists = $requestedFriend->getFriendRequests()->exists(function($key, $value,User $user) {
+                return $value === $user;
+            });
+
+            if (/*! ($requestedFriend === $user || */ $friendRequestExists) {
+                return $this->render('users/index.html.twig', [
+                    'users' => $users,
+                ]);
+                die();
+            }
+                $requestedFriend->addFriendRequest($user);
+
+                $conversation = new Conversation();
+                $requestedFriend->addConversation($conversation);
+                $user->addConversation($conversation);
+
+                $messageContent = 'new friend request.';
+                $message = new Message($user, $messageContent, $conversation);
+                $message->setIsFriendRequest(true);
+
+                $entityManager->persist($conversation);
+                $entityManager->persist($message);
+                $entityManager->flush();
+            
         }
 
         return $this->render('users/index.html.twig', [
@@ -38,8 +60,8 @@ class UsersController extends AbstractController
     {
         $friends = $user->getFriends();
 
-        return $this->render('users/index.html.twig', [
-            'users' => $friends,
+        return $this->render('users/friends.html.twig', [
+            'friends' => $friends,
         ]);
     }
 }

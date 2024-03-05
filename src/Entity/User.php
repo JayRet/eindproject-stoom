@@ -8,7 +8,6 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Bridge\Doctrine\IdGenerator\UuidGenerator;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
@@ -52,23 +51,41 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(mappedBy: 'creator', targetEntity: Game::class)]
     private Collection $games;
 
-    #[ORM\OneToMany(mappedBy: 'sender', targetEntity: Friend::class, orphanRemoval: true)]
-    private Collection $friends;
-
     #[ORM\ManyToMany(targetEntity: Conversation::class, mappedBy: 'user')]
     private Collection $conversations;
+
+    #[ORM\Column(type: Types::SMALLINT, options: ["default" => 0])]
+    private ?int $blockedStatus = null;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Achievement::class, orphanRemoval: true)]
+    private Collection $achievements;
+
+    #[ORM\OneToMany(mappedBy: 'user', targetEntity: Score::class, orphanRemoval: true)]
+    private Collection $scores;
+
+    #[ORM\ManyToMany(targetEntity: self::class)]
+    private Collection $friends;
+
+    #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'friendRequests')]
+    private Collection $friendRequest;
+
+    #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'friendRequest')]
+    private Collection $friendRequests;
 
     public function __construct()
     {
         $this->oAuth2UserConsents = new ArrayCollection();
         $this->games = new ArrayCollection();
-        $this->friends = new ArrayCollection();
         $this->conversations = new ArrayCollection();
+        $this->achievements = new ArrayCollection();
+        $this->scores = new ArrayCollection();
+        $this->friends = new ArrayCollection();
+        $this->friendRequests = new ArrayCollection();
     }
 
-    public function getId(): ?int
+    public function getId(): ?string
     {
-        return $this->id;
+        return $this->id->toRfc4122();
     }
 
     public function getEmail(): ?string
@@ -238,29 +255,29 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @return Collection<int, Friend>
+     * @return Collection<int, User>
      */
     public function getFriends(): Collection
     {
         return $this->friends;
     }
 
-    public function addFriend(Friend $friend): static
+    public function addFriend(User $friend): static
     {
         if (!$this->friends->contains($friend)) {
             $this->friends->add($friend);
-            $friend->setSender($this);
+            $friend->addFriend($this);
         }
 
         return $this;
     }
 
-    public function removeFriend(Friend $friend): static
+    public function removeFriend(User $friend): static
     {
         if ($this->friends->removeElement($friend)) {
             // set the owning side to null (unless already changed)
-            if ($friend->getSender() === $this) {
-                $friend->setSender(null);
+            if ($friend->getFriends()->contains($this)) {
+                $friend->removeFriend($this);
             }
         }
 
@@ -292,5 +309,101 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
 
         return $this;
+    }
+
+    public function getBlockedStatus(): ?int
+    {
+        return $this->blockedStatus;
+    }
+
+    public function setBlockedStatus(int $blockedStatus): static
+    {
+        $this->blockedStatus = $blockedStatus;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Achievement>
+     */
+    public function getAchievements(): Collection
+    {
+        return $this->achievements;
+    }
+
+    public function addAchievement(Achievement $achievement): static
+    {
+        if (!$this->achievements->contains($achievement)) {
+            $this->achievements->add($achievement);
+            $achievement->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeAchievement(Achievement $achievement): static
+    {
+        if ($this->achievements->removeElement($achievement)) {
+            // set the owning side to null (unless already changed)
+            if ($achievement->getUser() === $this) {
+                $achievement->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Score>
+     */
+    public function getScores(): Collection
+    {
+        return $this->scores;
+    }
+
+    public function addScore(Score $score): static
+    {
+        if (!$this->scores->contains($score)) {
+            $this->scores->add($score);
+            $score->setUser($this);
+        }
+
+        return $this;
+    }
+
+    public function removeScore(Score $score): static
+    {
+        if ($this->scores->removeElement($score)) {
+            // set the owning side to null (unless already changed)
+            if ($score->getUser() === $this) {
+                $score->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function addFriendRequest(User $requestedFriend): static
+    {
+        if (!$this->friendRequests->contains($requestedFriend)) {
+            $this->friendRequests->add($requestedFriend);
+        }
+
+        return $this;
+    }
+
+    public function removeFriendRequest(User $requestedFriend): static
+    {
+        $this->friendRequests->removeElement($requestedFriend);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, self>
+     */
+    public function getFriendRequests(): Collection
+    {
+        return $this->friendRequests;
     }
 }

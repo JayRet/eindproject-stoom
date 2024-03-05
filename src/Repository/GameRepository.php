@@ -5,6 +5,7 @@ namespace App\Repository;
 use App\Entity\Game;
 use App\Entity\User;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Common\Collections\Criteria;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -28,14 +29,32 @@ class GameRepository extends ServiceEntityRepository
     */
     public function findAllVisible(User $user): array
     {
-        $friends = $user->getFriends();
+        $friends = $user->getFriends()->getValues();
         return $this->createQueryBuilder('g')
             ->orWhere('g.isPublic = true')
             ->orWhere('g.creator = :user')
-            ->orWhere($this->createQueryBuilder('g')->expr()->in('g.creater = :friends')) // QUESTION: is this correct?
+            ->orWhere('g.creator IN (:friends)')
             ->setParameter('user', $user)
             ->setParameter('friends', $friends)
             ->orderBy('g.name', 'ASC')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+    
+    /**
+    * @return Game[] Returns an array of Game objects
+    * @method Game[] findAllFriendGames(User $user)
+    */
+    public function findAllFriendGames(User $user): array
+    {
+        $friends = $user->getFriends()->getValues();
+        return $this->createQueryBuilder('g')
+            ->orWhere('g.creator = :user')
+            ->orWhere('g.creator IN (:friends)')
+            ->setParameter('user', $user)
+            ->setParameter('friends', $friends)
+            /* ->orderBy('g.name', 'ASC') */
             ->getQuery()
             ->getResult()
         ;

@@ -21,6 +21,9 @@ class Conversation
     #[ORM\OneToMany(mappedBy: 'conversation', targetEntity: Message::class, orphanRemoval: true)]
     private Collection $messages;
 
+    #[ORM\Column(nullable: true)]
+    private ?bool $isAccepted = null;
+
     public function __construct()
     {
         $this->user = new ArrayCollection();
@@ -82,6 +85,31 @@ class Conversation
                 $message->setConversation(null);
             }
         }
+
+        return $this;
+    }
+
+    public function generateDisplayName(User $user): string
+    {
+        $users = $this->getUser();
+        $usernames = [];
+        foreach ($users as $userObject) {
+            if ($userObject->getName() != $user) {
+                $usernames[] = $userObject->getName();
+            }
+        }
+
+        return implode(', ', $usernames);
+    }
+
+    public function isIsAccepted(): ?bool
+    {
+        return $this->isAccepted;
+    }
+
+    public function setIsAccepted(?bool $isAccepted): static
+    {
+        $this->isAccepted = $isAccepted;
 
         return $this;
     }

@@ -1,1 +1,9 @@
-{% 
+    <a href="{{ path('app_games') }}">Games</a>
+    <a href="{{ path('app_games_friends') }}">Friend games</a>
+    <a href="{{ path('app_users') }}">Users</a>
+    <a href="{{ path('app_friends') }}">Friends</a>
+    <a href="{{ path('app_profile') }}">Profile</a>
+    <a href="{{ path('app_messages') }}">Messages</a>
+
+    <span>{{ app.user.email }}</span>
+    <a href="{{ path('app_messages') }}">{{ unreadMessagesCount(app.user) }}</a>

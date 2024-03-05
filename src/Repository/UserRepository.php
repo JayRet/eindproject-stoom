@@ -54,7 +54,77 @@ class UserRepository extends ServiceEntityRepository implements PasswordUpgrader
         }
         return null;
     }
+    
+    /**
+    * @return User[] Returns an array of User objects
+    */
+    public function findByInviteBlocked(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.blockedStatus <= :blockedStatus')
+            ->setParameter('blockedStatus', 1)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
+    /**
+    * @return User[] Returns an array of User objects
+    */
+    public function findByMessageBlocked(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.blockedStatus <= :blockedStatus')
+            ->setParameter('blockedStatus', 2)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+    
+    /**
+    * @return User[] Returns an array of User objects
+    */
+    public function findByFullyBlocked(): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.blockedStatus >= :blockedStatus')
+            ->setParameter('blockedStatus', 3)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
+    /**
+    * @return User[] Returns an array of User objects
+    */
+    public function findFriendByInviteBlocked(User $user): array
+    {
+        $blockedUsers = $this->findByInviteBlocked();
+        $friends = $user->getFriends();
+        return array_intersect($blockedUsers, $friends);
+    }
+
+    /**
+    * @return User[] Returns an array of User objects
+    */
+    public function findFriendByMessageBlocked(User $user): array
+    {
+        $blockedUsers = $this->findByMessageBlocked();
+        $friends = $user->getFriends();
+        return array_intersect($blockedUsers, $friends);
+    }
+
+    public function findAllUsersExluding(User $user): array
+    {
+        $username = $user->getName();
+        return $this->createQueryBuilder('u')
+            ->andWhere('u.name != :username')
+            ->andWhere('u.blockedStatus = 0')
+            ->setParameter('username', $username)
+            ->getQuery()
+            ->getResult()
+        ;
+    }
 
 //    /**
 //     * @return User[] Returns an array of User objects

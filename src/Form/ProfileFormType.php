@@ -5,14 +5,14 @@ namespace App\Form;
 use App\Entity\User;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\BirthdayType;
-use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\FormBuilderInterface;
+use Symfony\Component\Mime\Part\File;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\IsTrue;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -56,6 +56,18 @@ class ProfileFormType extends AbstractType
                     ],
                 ],
             ])
+            // ->add('imageFile', FileType::class, [
+            //     'mapped' => false,
+            //     'constraints' => [
+            //         new File([
+            //             'maxSize' => '4096k',
+            //             'mimeTypes' => [
+            //                 'image/*',
+            //             ],
+            //             'mimeTypesMessage' => 'Please upload a valid image'
+            //         ]),
+            //     ]
+            // ])
             ->add('gender', ChoiceType::class, [
                 'choices' => [
                     'rather not say' => null,

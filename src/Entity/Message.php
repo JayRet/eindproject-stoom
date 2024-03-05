@@ -32,9 +32,21 @@ class Message
     #[ORM\OneToMany(mappedBy: 'reply', targetEntity: self::class)]
     private Collection $replyOn;
 
-    public function __construct()
+    #[ORM\Column]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column]
+    private ?bool $isRead = null;
+
+    #[ORM\Column]
+    private ?bool $isFriendRequest = null;
+
+    public function __construct(User $sender, string $content, Conversation $conversation)
     {
+        $this->setSender($sender)->setIsRead(false)->setIsFriendRequest(false);
+        $this->setConversation($conversation)->setContent($content);
         $this->replyOn = new ArrayCollection();
+        $this->setCreatedAt(new \DateTimeImmutable('now'));
     }
 
     public function getId(): ?int
@@ -116,6 +128,42 @@ class Message
                 $replyOn->setReply(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function isIsRead(): ?bool
+    {
+        return $this->isRead;
+    }
+
+    public function setIsRead(bool $isRead): static
+    {
+        $this->isRead = $isRead;
+
+        return $this;
+    }
+
+    public function isIsFriendRequest(): ?bool
+    {
+        return $this->isFriendRequest;
+    }
+
+    public function setIsFriendRequest(bool $isFriendRequest): static
+    {
+        $this->isFriendRequest = $isFriendRequest;
 
         return $this;
     }

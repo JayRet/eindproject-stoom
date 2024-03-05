@@ -18,6 +18,11 @@ class OAuth2ClientProfile
     #[ORM\JoinColumn(referencedColumnName: 'identifier', nullable: false)]
     private ?Client $client = null;
 
+    public function __construct(Client $client)
+    {
+        $this->setClient($client);
+    }
+
     public function getId(): ?int
     {
         return $this->id;

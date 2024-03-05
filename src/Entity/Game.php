@@ -3,7 +3,6 @@
 namespace App\Entity;
 
 use App\Repository\GameRepository;
-use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Mime\Part\File;
 use Symfony\Component\String\Slugger\AsciiSlugger;
@@ -21,9 +20,6 @@ class Game
     #[ORM\Column(length: 255, unique: true)]
     private ?string $name = null;
 
-    #[ORM\Column(length: 1000)]
-    private ?string $description = null;
-
     #[ORM\OneToOne(cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     private ?OAuth2ClientProfile $OAuth2ClientProfile = null;
@@ -38,14 +34,13 @@ class Game
     #[ORM\Column(length: 255, unique: true)]
     private ?string $slug = null;
 
-    public function __construct(User $user, EntityManagerInterface $entityManager)
+    #[ORM\Column]
+    private ?bool $isPublic = null;
+
+    public function __construct(User $user, OAuth2ClientProfile $oAuth2ClientProfile)
     {
         $this->setCreator($user);
-
-        $OAuth2ClientProfile = new OAuth2ClientProfile();
-        $this->setOAuth2ClientProfile($OAuth2ClientProfile);
-        $entityManager->persist($OAuth2ClientProfile);
-        $entityManager->flush();
+        $this->setOAuth2ClientProfile($oAuth2ClientProfile);
     }
 
     public function getId(): ?int
@@ -62,18 +57,6 @@ class Game
     {
         $this->name = $name;
         $this->setSlug();
-
-        return $this;
-    }
-
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
-
-    public function setDescription(string $description): static
-    {
-        $this->description = $description;
 
         return $this;
     }
@@ -135,6 +118,18 @@ class Game
     {
         $slugger = new AsciiSlugger();
         $this->slug = $slugger->slug($this->name)->toString();
+
+        return $this;
+    }
+
+    public function isIsPublic(): ?bool
+    {
+        return $this->isPublic;
+    }
+
+    public function setIsPublic(bool $isPublic): static
+    {
+        $this->isPublic = $isPublic;
 
         return $this;
     }

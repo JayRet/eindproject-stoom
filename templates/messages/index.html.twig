@@ -1,20 +1,50 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello MessagesController!{% endblock %}
+{% block title %}Messages{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+    <div class="conversation-overview">
+        <lu>
+            {% for conversation in conversations %}
+                <li><a href="{{ path('app_messages', {id: conversation.id}) }}">
+                    <h4>{{ conversation.generateDisplayName(app.user) }}</h4>
+                </a></li>
+            {% else %}
+                <a href="{{ path('app_users') }}">Find some friends</a>
+                <span>to start a convo with</span>
+            {% endfor %}
+        </lu>
+    </div>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
-
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>/home/artemis/repos/29394-29395-29396/eindproject/eindproject-startover-stoom/src/Controller/MessagesController.php</code></li>
-        <li>Your template at <code>/home/artemis/repos/29394-29395-29396/eindproject/eindproject-startover-stoom/templates/messages/index.html.twig</code></li>
-    </ul>
-</div>
+    <div class="conversation-window">
+        <lu>
+            {% for message in messages %}
+                <li>
+                    <span class="message-username">{{ message.sender.name }}</span> - 
+                    <span class="message-timestamp">{{ message.createdAt|date('d/m/Y') }}</span>
+                    <p>{{ message.content }}</p>
+                    {% if message.isFriendRequest and not message.sender is same as(app.user) %}
+                    <form method="post">
+                        <button name="accept_friend_request" value="accept">accept</button>
+                        <button name="accept_friend_request" value="decline">decline</button>
+                        <input type="hidden" name="friend_name" value="{{ message.sender.name }}">
+                    </form>
+                    {% endif %}
+                </li>
+            {% else %}
+                <p>Select a conversation.</p>
+            {% endfor %}
+        </lu>
+        {% if blocked or messages is empty %}
+            <form>
+                <textarea name="content" class="message-textarea" placeholder="can't send messages right now" disabled></textarea>
+                <input type="submit" class="send-btn" value="Send" disabled>
+            </form>
+        {% else %}
+            <form>
+                <textarea name="content" class="message-textarea" placeholder="Write a message ..."></textarea>
+                <input type="submit" class="send-btn" value="Send">
+            </form>
+        {% endif %}
+    </div>
 {% endblock %}

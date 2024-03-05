@@ -21,20 +21,21 @@ class MessageRepository extends ServiceEntityRepository
         parent::__construct($registry, Message::class);
     }
 
-//    /**
-//     * @return Message[] Returns an array of Message objects
-//     */
-//    public function findByExampleField($value): array
-//    {
-//        return $this->createQueryBuilder('m')
-//            ->andWhere('m.exampleField = :val')
-//            ->setParameter('val', $value)
-//            ->orderBy('m.id', 'ASC')
-//            ->setMaxResults(10)
-//            ->getQuery()
-//            ->getResult()
-//        ;
-//    }
+    /**
+    * @return int Returns an integer of the amount of unread Message objects
+    * @method int countUnreadMessages(array $conversations)
+    */
+    public function countUnreadMessages(array $conversations): int
+    {
+        return $this->createQueryBuilder('m')
+            ->select('count(m.id)')
+            ->andWhere('m.isRead = false')
+            ->andWhere('m.conversation IN (:conversations)')
+            ->setParameter('conversations', $conversations)
+            ->getQuery()
+            ->getSingleScalarResult()
+        ;
+    }
 
 //    public function findOneBySomeField($value): ?Message
 //    {

@@ -20,7 +20,7 @@ security:
             logout:
                 path: app_logout
                 # where to redirect after logout
-                # target: app_any_route
+                target: app_games
 
             remember_me:
                 secret: '%kernel.secret%'
@@ -42,24 +42,22 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
-        # auth access
-        - { path: ^/authorize,  roles: PUBLIC_ACCESS }
-        - { path: ^/login,      roles: PUBLIC_ACCESS }
-        - { path: ^/token,      roles: PUBLIC_ACCESS }
-        - { path: ^/register,   roles: PUBLIC_ACCESS }
+        # auth
+        - { route: app_login|app_register, allow_if: "!is_granted('ROLE_USER')" }
 
-        # api access
+        - { path: ^/authorize,  roles: PUBLIC_ACCESS }
+        - { path: ^/token,      roles: PUBLIC_ACCESS }
+
+        # site
+        - { path: app_homepage, roles: PUBLIC_ACCESS }
+        - { path: app_games,    roles: PUBLIC_ACCESS }
+        - { path: ^/,           roles: ROLE_USER }
+
+        # api
         - { path: ^/api,        roles: ROLE_OAUTH2_EMAIL }
 
-        # site access
-        - { path: ^/^,          roles: PUBLIC_ACCESS }
-        - { path: ^/games,      roles: PUBLIC_ACCESS }
-        - { path: ^/,           roles: ROLE_USER }
+        # admin
         - { path: ^/admin,      roles: ROLE_ADMIN }
-
-    role_hierarchy:
-        ROLE_BLOCKED_SOCIAL: ROLE_BLOCKED_MESSAGES
-        ROLE_BLOCKED_FULLY: ROLE_BLOCKED_SOCIAL
 
 when@test:
     security:

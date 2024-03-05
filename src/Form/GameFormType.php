@@ -4,6 +4,7 @@ namespace App\Form;
 
 use App\Entity\Game;
 use Symfony\Component\Form\AbstractType;
+use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -19,28 +20,30 @@ class GameFormType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('name', [
-                new NotBlank([
-                    'message' => 'Please enter a name',
-                ]),
-                new Regex([
-                    'pattern' => '/^[a-zA-Z0-9\s]+$/',
-                    'message' => 'Your name can only contain letters, numbers and spaces',
-                ]),
-                new Length([
-                    'max' => 64,
-                    'maxMessage' => 'Please limit your name to {{ limit }} characters',
-                ])
+            ->add('name', TextType::class, [
+                'constraints' => [
+                    new NotBlank([
+                        'message' => 'Please enter a name',
+                    ]),
+                    new Regex([
+                        'pattern' => '/^[a-zA-Z0-9\s]+$/',
+                        'message' => 'Your name can only contain letters, numbers and spaces',
+                    ]),
+                    new Length([
+                        'max' => 64,
+                        'maxMessage' => 'Please limit your name to {{ limit }} characters',
+                    ])
+                ]
             ])
-            ->add('description', TextType::class, [
-                new NoSuspiciousCharacters([
-                    'message' => 'Some characters in the description cannot be used',
-                ]),
-                new Length([
-                    'max' => 1000,
-                    'maxMessage' => 'Please limit your description to {{ limit }} characters',
-                ])
-            ])
+            // ->add('description', TextType::class, [
+            //     new NoSuspiciousCharacters([
+            //         'message' => 'Some characters in the description cannot be used',
+            //     ]),
+            //     new Length([
+            //         'max' => 1000,
+            //         'maxMessage' => 'Please limit your description to {{ limit }} characters',
+            //     ])
+            // ])
             ->add('imageFile', FileType::class, [
                 'mapped' => false,
                 'constraints' => [
@@ -53,7 +56,7 @@ class GameFormType extends AbstractType
                     ]),
                 ]
             ])
-            ->add('url', [
+            ->add('url', TextType::class, [
                 'constraints' => [
                     new Length([
                         'max' => 255,
@@ -61,6 +64,7 @@ class GameFormType extends AbstractType
                     ])
                 ]
             ])
+            ->add('isPublic', CheckboxType::class)
         ;
     }
 

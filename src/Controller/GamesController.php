@@ -3,10 +3,12 @@
 namespace App\Controller;
 
 use App\Entity\Game;
+use App\Entity\OAuth2ClientProfile;
 use App\Entity\User;
 use App\Form\GameFormType;
 use App\Repository\GameRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use League\Bundle\OAuth2ServerBundle\Entity\Client;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,38 +18,29 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class GamesController extends AbstractController
 {
-    private $gameRepository;
-    private $security;
 
-    public function __construct(GameRepository $gameRepository, Security $security)
+    public function __construct(private GameRepository $gameRepository, private Security $security)
     {
-        $this->security = $security;
-        $this->gameRepository = $gameRepository;
     }
 
     #[Route('/games', name: 'app_games')]
-    public function index(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
+    public function index(Request $request, #[CurrentUser] User $user): Response
     {
-        $games = $this->gameRepository->findAllVisable($user);
-
-        if ($request->request->get('game'))
-        {
-            $gameSlug = $request->request->get('game');
-            $game = $this->gameRepository->findOneBy(['slug' => $gameSlug]);
-
-            if ($request->query->get('play') && in_array($game, $games))
-            {
-                return $this->redirectToRoute('oauth2_authorize', array(
-                    'client_id' => $game->getOAuth2ClientProfile()->getClient()->getIdentifier(),
-                    'redirect_uri' => $game->getUrl(),
-                    'response_type' => 'code',
-                    'scopes' => $game->getOAuth2ClientProfile()->getScopes(),
-                ));
-            }
-
-            return $this->redirectToRoute('app_games_game', ['game' => $gameSlug]);
+        $games = $this->gameRepository->findBy(['isPublic' => true], ['name' => 'ASC']);
+        
+        if ($this->security->isGranted('ROLE_USER')) {
+            $games = $this->gameRepository->findAllVisible($user);
         }
 
+        return $this->render('games/index.html.twig', [
+            'games' => $games,
+        ]);
+    }
+
+    #[Route('/games/friends', name: 'app_games_friends')]
+    public function friendGames(Request $request, #[CurrentUser] User $user): Response
+    {
+        $games = $this->gameRepository->findAllFriendGames($user);
 
         return $this->render('games/index.html.twig', [
             'games' => $games,
@@ -57,58 +50,84 @@ class GamesController extends AbstractController
     #[Route('/games/new', name: 'app_games_new')]
     public function newGame(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
     {
-        $game = new Game($user);
+        $oAuth2Client = new Client('temp', uniqid(md5), uniqid(md5));
+        $oAuth2ClientProfile = new OAuth2ClientProfile();
+        $game = new Game($user, $oAuth2ClientProfile);
+
         $form = $this->createForm(GameFormType::class, $game);
         $form->handleRequest($request);
 
+        $oAuth2ClientId = $oAuth2Client->getIdentifier();
+        // $oAuth2ClientSecret = $oAuth2Client->getIdentifier(); // in case of a client secret
+
         if ($form->isSubmitted() && $form->isValid()) {
-            $OAuth2Client = $game->getOAuth2ClientProfile()->getClient();
-            $OAuth2ClientId = $OAuth2Client->getIdentifier();
-            // $OAuth2ClientSecret = $OAuth2Client->getSecret(); // in case of a client secret
+            $oAuth2Client->setName($game->getSlug());
             
-            $entityManager->persist($game);
+            $entityManager->persist($game, $oAuth2ClientProfile, $oAuth2Client);
             $entityManager->flush();
-        }
 
-        return $this->render('games/new.html.twig', [
-            'title' => 'Create a new game',
-            'gameForm' => $form->createView(),
-            'OAuth2ClientId' => $OAuth2ClientId,
-            // 'OAuth2ClientSecret' => $OAuth2ClientSecret, // in case of a client secret
-        ]);
-    }
-
-    #[Route('/games/{game}', name: 'app_games_game')]
-    public function game(Request $request, EntityManagerInterface $entityManager, string $gameSlug, #[CurrentUser] User $user): Response
-    {
-        $game = $this->gameRepository->findOneBy(['slug' => $gameSlug]);
-
-        if ($request->query->get('editing_mode')) {
-            // check if user is the creator or admin
-            if ($user === $game->getCreator() || $this->security->isGranted('ROLE_ADMIN')) {
-
-                $form = $this->createForm(GameFormType::class, $game);
-                $form->handleRequest($request);
-
-                if ($form->isSubmitted() && $form->isValid()) {
-                    $entityManager->persist($game);
-                    $entityManager->flush();
-
-                    return $this->redirectToRoute('app_games_game', ['game' => $gameSlug]);
-                }
-
-                // TODO: same form as creating the game, but filled in with existing values
-                return $this->render('games/new.html.twig', [
-                    'title' => 'Edit ' + $game->getName(),
-                    'editingMode' => true,
-                    'gameForm' => $form->createView(),
-                ]); 
-            }
+            return $this->redirectToRoute('app_games_game', ['gameSlug' => $game->getSlug()]);
         }
 
         return $this->render('games/game.html.twig', [
-            'title' => $game->getName(),
-            'game' => $game,
+            'title' => 'Create a new game',
+            'gameForm' => $form->createView(),
+            'OAuth2ClientId' => $oAuth2ClientId,
+            // 'OAuth2ClientSecret' => $oAuth2ClientSecret, // in case of a client secret
         ]);
+    }
+
+    #[Route('/games/{gameSlug}', name: 'app_games_game')]
+    public function game(Request $request, EntityManagerInterface $entityManager, string $gameSlug, #[CurrentUser] User $user): ?Response
+    {
+        $game = $this->gameRepository->findOneBy(['slug' => $gameSlug]);
+
+        if ($game === null) {
+            return new Response("Sorry boo, ya ain't got access to this.", 403);
+        }
+        // check if user is the creator or admin
+        if ($user === $game->getCreator() || $this->security->isGranted('ROLE_ADMIN')) {
+
+            if ($request->isMethod('post') && $request->query->get('play')) {
+                return $this->redirectToRoute('oauth2_authorize', array(
+                    'client_id' => $game->getOAuth2ClientProfile()->getClient()->getIdentifier(),
+                    'redirect_uri' => $game->getUrl(),
+                    'response_type' => 'code',
+                    'scopes' => $game->getOAuth2ClientProfile()->getClient()->getScopes(),
+                ));
+            }
+
+
+            $form = $this->createForm(GameFormType::class, $game);
+            $form->handleRequest($request);
+
+            if ($form->isSubmitted() && $form->isValid()) {
+                $entityManager->persist($game);
+                $entityManager->flush();
+
+                return $this->redirectToRoute('app_games_game', ['game' => $gameSlug]);
+            }
+
+            return $this->render('games/game.html.twig', [
+                'title' => 'Edit ' . $game->getName(),
+                'gameForm' => $form->createView(),
+                'OAuth2ClientId' => $game->getOAuth2ClientProfile()->getClient()->getIdentifier(),
+                'playGameButton' => true,
+            ]); 
+        }
+
+        $playAbleGames = $this->gameRepository->findAllVisible($user);
+
+        if (in_array($game, $playAbleGames))
+        {
+            return $this->redirectToRoute('oauth2_authorize', array(
+                'client_id' => $game->getOAuth2ClientProfile()->getClient()->getIdentifier(),
+                'redirect_uri' => $game->getUrl(),
+                'response_type' => 'code',
+                'scopes' => $game->getOAuth2ClientProfile()->getClient()->getScopes(),
+            ));
+        }
+
+        return new Response("Sorry boo, ya ain't got access to this.", 403);
     }
 }
