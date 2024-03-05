@@ -10,8 +10,6 @@ use Symfony\Component\String\Slugger\AsciiSlugger;
 #[ORM\Entity(repositoryClass: GameRepository::class)]
 class Game
 {
-    protected File $imageFilename;
-
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -36,6 +34,9 @@ class Game
 
     #[ORM\Column]
     private ?bool $isPublic = null;
+
+    #[ORM\Column(length: 255)]
+    private ?string $picture = null;
 
     public function __construct(User $user, OAuth2ClientProfile $oAuth2ClientProfile)
     {
@@ -69,18 +70,6 @@ class Game
     private function setOAuth2ClientProfile(OAuth2ClientProfile $OAuth2ClientProfile): static
     {
         $this->OAuth2ClientProfile = $OAuth2ClientProfile;
-
-        return $this;
-    }
-
-    public function getImageFilename(): ?string
-    {
-        return $this->picture;
-    }
-
-    public function setImageFilename(File $imageFile = null): static
-    {
-        $this->imageFilename = $imageFile;
 
         return $this;
     }
@@ -130,6 +119,18 @@ class Game
     public function setIsPublic(bool $isPublic): static
     {
         $this->isPublic = $isPublic;
+
+        return $this;
+    }
+
+    public function getPicture(): ?string
+    {
+        return $this->picture;
+    }
+
+    public function setPicture(string $picture): static
+    {
+        $this->picture = $picture;
 
         return $this;
     }

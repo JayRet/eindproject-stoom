@@ -4,10 +4,10 @@
 
 {% block body %}
     {% for friend in friends %}
-            <img src="{{ asset(friend.imagePath) }}"/>
+            <img src="{{ asset(friend.picture) }}"/>
             <h3>{{ friend.name }}</h3>
     {% else %}
-        <h1>No friends have been found.(haha loser)</h1>
+        <h1>No friends have been found. (haha loser)</h1>
         <a href="{{ path('app_users') }}>find some friends</a>
     {% endfor %}
 {% endblock %}

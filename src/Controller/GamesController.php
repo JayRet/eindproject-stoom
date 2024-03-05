@@ -7,6 +7,7 @@ use App\Entity\OAuth2ClientProfile;
 use App\Entity\User;
 use App\Form\GameFormType;
 use App\Repository\GameRepository;
+use App\Service\ImageUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use League\Bundle\OAuth2ServerBundle\Entity\Client;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -48,7 +49,7 @@ class GamesController extends AbstractController
     }
 
     #[Route('/games/new', name: 'app_games_new')]
-    public function newGame(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
+    public function newGame(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user, ImageUploader $imageUploader): Response
     {
         $oAuth2Client = new Client('temp', uniqid(md5), uniqid(md5));
         $oAuth2ClientProfile = new OAuth2ClientProfile();
@@ -62,6 +63,9 @@ class GamesController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $oAuth2Client->setName($game->getSlug());
+
+            $imageLocation = $imageUploader->uploadImage($form['imageFile']->getData(), 'pfp');
+            $game->setPicture($imageLocation);
             
             $entityManager->persist($game, $oAuth2ClientProfile, $oAuth2Client);
             $entityManager->flush();
@@ -88,7 +92,7 @@ class GamesController extends AbstractController
         // check if user is the creator or admin
         if ($user === $game->getCreator() || $this->security->isGranted('ROLE_ADMIN')) {
 
-            if ($request->isMethod('post') && $request->query->get('play')) {
+            if ($request->isMethod('post') && $request->request->get('play')) {
                 return $this->redirectToRoute('oauth2_authorize', array(
                     'client_id' => $game->getOAuth2ClientProfile()->getClient()->getIdentifier(),
                     'redirect_uri' => $game->getUrl(),
@@ -105,7 +109,7 @@ class GamesController extends AbstractController
                 $entityManager->persist($game);
                 $entityManager->flush();
 
-                return $this->redirectToRoute('app_games_game', ['game' => $gameSlug]);
+                return $this->redirectToRoute('app_games_game', ['gameSlug' => $game->getSlug()]);
             }
 
             return $this->render('games/game.html.twig', [

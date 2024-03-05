@@ -24,9 +24,7 @@ class UsersController extends AbstractController
             $requestedFriendName = $request->request->get('requested_friend');
             $requestedFriend = $userRepository->findOneBy(['name' => $requestedFriendName]);
 
-            $friendRequestExists = $requestedFriend->getFriendRequests()->exists(function($key, $value,User $user) {
-                return $value === $user;
-            });
+            $friendRequestExists = $requestedFriend->getFriendRequests()->contains($user);
 
             if (/*! ($requestedFriend === $user || */ $friendRequestExists) {
                 return $this->render('users/index.html.twig', [

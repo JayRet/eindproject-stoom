@@ -4,7 +4,7 @@
 
 {% block body %}
     {% for user in users %}
-            {# <img src="{{ asset(user.pfpPath) }}"/> #}
+            {<img src="{{ asset(user.picture) }}"/>
             <h3>{{ user.name }}</h3>
             <form action="" method="post">
                 <button name="requested_friend" value="{{ user.name }}">

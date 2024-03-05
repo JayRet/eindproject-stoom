@@ -66,11 +66,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToMany(targetEntity: self::class)]
     private Collection $friends;
 
-    #[ORM\ManyToMany(targetEntity: self::class, inversedBy: 'friendRequests')]
-    private Collection $friendRequest;
-
     #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'friendRequest')]
     private Collection $friendRequests;
+
+    #[ORM\Column(length: 255)]
+    private ?string $picture = null;
 
     public function __construct()
     {
@@ -405,5 +405,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function getFriendRequests(): Collection
     {
         return $this->friendRequests;
+    }
+
+    public function getPicture(): ?string
+    {
+        return $this->picture;
+    }
+
+    public function setPicture(string $picture): static
+    {
+        $this->picture = $picture;
+
+        return $this;
     }
 }

@@ -20,6 +20,9 @@ class MessagesController extends AbstractController
     public function index(Request $request, #[CurrentUser] User $user, UserRepository $userRepository, ConversationRepository $conversationRepository, MessageRepository $messageRepository, EntityManagerInterface $entityManager): Response
     {
         $conversationId = $request->query->get('id');
+        if ($request->request->get('post_id')) {
+            $conversationId = $request->request->get('post_id');
+        }
         $conversation = $conversationRepository->findOneBy(['id' => $conversationId]);
         $conversationsCollectionArray = $user->getConversations();
 
@@ -37,17 +40,18 @@ class MessagesController extends AbstractController
                     $messages = $conversation->getMessages();
             }
 
+
             if (in_array($user, $userRepository->findByInviteBlocked())) {
                 if ($request->isMethod('post')) {
 
                     if (!$conversation->isIsAccepted()) {
-                        if ($request->request->get('accept_friend_request') === 'accept') {
+                        if ($request->request->get('accept_friend_request') == 'accept') {
                             $conversation->setIsAccepted(true);
                             $conversation->getMessages()->clear();
                         }
 
-                        if ($request->request->get('accept_friend_request') === 'decline') {
-                            $requestedFriend = $request->request->get('friend_name');
+                        if ($request->request->get('accept_friend_request') == 'decline') {
+                            $requestedFriend = $userRepository->findOneBy(['name' => $request->request->get('friend_name')]);
                             $user->removeFriendRequest($requestedFriend);
 
                             $conversation->setIsAccepted(false);
@@ -58,14 +62,8 @@ class MessagesController extends AbstractController
                     $messageContent = $request->request->get('content');
 
                     if (isset($messageContent) && $conversation->isIsAccepted()) {
-                        $message = new Message();
-                        $message
-                            ->setSender($user)
-                            ->setContent($messageContent)
-                            ->setConversation($conversation)
-                            ->isIsRead(false)
-                            /* ->addReplyOn($reply) */
-                        ;
+                        $message = new Message($user, $messageContent, $conversation);
+                        $message->isIsRead(false);
 
                         $entityManager->persist($message);
                         $entityManager->flush();
@@ -79,6 +77,7 @@ class MessagesController extends AbstractController
             'messages' => $messages,
             'conversations' => $conversationsCollectionArray->getValues(),
             'blocked' => $blocked,
+            'conversationId' => $conversationId,
         ]);
     }
 }

@@ -9,7 +9,7 @@
         {% else %}
             <a href="{{ path('app_login') }}">
         {% endif %}
-            {# <img src="{{ asset(game.pfpPath) }}"/> #}
+            <img src="{{ asset(game.picture) }}"/>
             <h3>{{ game.name }}</h3>
         </a>
     {% else %}

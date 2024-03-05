@@ -24,10 +24,11 @@
                     <span class="message-timestamp">{{ message.createdAt|date('d/m/Y') }}</span>
                     <p>{{ message.content }}</p>
                     {% if message.isFriendRequest and not message.sender is same as(app.user) %}
-                    <form method="post">
+                    <form action="/messages" method="post">
                         <button name="accept_friend_request" value="accept">accept</button>
                         <button name="accept_friend_request" value="decline">decline</button>
                         <input type="hidden" name="friend_name" value="{{ message.sender.name }}">
+                        <input type="hidden" name="post_id" value="{{ conversationId }}">
                     </form>
                     {% endif %}
                 </li>
@@ -36,12 +37,12 @@
             {% endfor %}
         </lu>
         {% if blocked or messages is empty %}
-            <form>
+            <form action="/messages" method="post">
                 <textarea name="content" class="message-textarea" placeholder="can't send messages right now" disabled></textarea>
                 <input type="submit" class="send-btn" value="Send" disabled>
             </form>
         {% else %}
-            <form>
+            <form action="/messages" method="post">
                 <textarea name="content" class="message-textarea" placeholder="Write a message ..."></textarea>
                 <input type="submit" class="send-btn" value="Send">
             </form>

@@ -4,22 +4,34 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Form\ProfileFormType;
+use App\Service\ImageUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
 
 class ProfileController extends AbstractController
 {
     #[Route('/profile/edit', name: 'app_profile')]
-    public function userEditor(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user): Response
+    public function userEditor(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user, UserPasswordHasherInterface $userPasswordHasher, ImageUploader $imageUploader): Response
     {
         $form = $this->createForm(ProfileFormType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $user->setPassword(
+                $userPasswordHasher->hashPassword(
+                    $user,
+                    $form->get('plainPassword')->getData()
+                )
+            );
+            
+            $imageLocation = $imageUploader->uploadImage($form['imageFile']->getData(), 'pfp');
+            $user->setPicture($imageLocation);
+
             $entityManager->persist($user);
             $entityManager->flush();
         }
