@@ -16,6 +16,6 @@ class ImageUploader
         $destination = $this->kernel->getProjectDir().'/public/uploads/'.$subDirectory;
         $file->move($destination, $newImageName);
 
-        return $destination.'/'.$newImageName;
+        return 'uploads/'.$subDirectory.'/'.$newImageName;
     }
 }

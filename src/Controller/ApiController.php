@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Achievement;
 use App\Entity\Score;
 use App\Entity\User;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -15,17 +16,19 @@ use Symfony\Component\Security\Http\Attribute\CurrentUser;
 class ApiController extends AbstractController
 {
     #[Route('/api/user', name: 'app_api_user')]
-    public function apiUser(#[CurrentUser] User $user): Response
+    public function apiUser(UserRepository $userRepository): Response
     {
+        $user = $userRepository->loadUserByIdentifier($this->getUser()->getUserIdentifier());
         return $this->json([
-            'username' => $user->getName(),
-            'image_url' => $user,
+            'username' => $user,
+            'image_url' => $this->getUser()->getUserIdentifier(),
         ]);
     }
 
     #[Route('/api/game/scores', name: 'app_api_game_data')]
-    public function apiGameScore(Request $request, #[CurrentUser] User $user, EntityManager $entityManager): Response
+    public function apiGameScore(Request $request, EntityManager $entityManager, UserRepository $userRepository): Response
     {
+        $user = $userRepository->loadUserByIdentifier($this->getUser()->getUserIdentifier());
         if ($request->isMethod('post')) {
             $score = new Score();
             $score->setUser($user);
@@ -45,8 +48,9 @@ class ApiController extends AbstractController
 
 
     #[Route('/api/game/data', name: 'app_api_game_data')]
-    public function apiGameData(#[CurrentUser] User $user): Response
+    public function apiGameData(UserRepository $userRepository): Response
     {
+        $user = $userRepository->loadUserByIdentifier($this->getUser()->getUserIdentifier());
         return $this->json([
             'message' => 'You successfully authenticated!',
             'email' => $user->getUserIdentifier(),
