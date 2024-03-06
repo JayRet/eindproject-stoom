@@ -3,7 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Form\ProfileFormType;
+use App\Form\RegistrationFormType;
 use App\Service\ImageUploader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,7 +18,7 @@ class ProfileController extends AbstractController
     #[Route('/profile/edit', name: 'app_profile')]
     public function userEditor(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user, UserPasswordHasherInterface $userPasswordHasher, ImageUploader $imageUploader): Response
     {
-        $form = $this->createForm(ProfileFormType::class, $user);
+        $form = $this->createForm(RegistrationFormType::class, $user);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {

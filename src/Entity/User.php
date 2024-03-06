@@ -69,7 +69,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\ManyToMany(targetEntity: self::class, mappedBy: 'friendRequest')]
     private Collection $friendRequests;
 
-    #[ORM\Column(length: 255)]
+    #[ORM\Column(length: 255, options: ["default" => "public/uploads/pfp/default.png"])]
     private ?string $picture = null;
 
     public function __construct()

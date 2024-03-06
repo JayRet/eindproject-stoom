@@ -9,7 +9,9 @@ use App\Form\GameFormType;
 use App\Repository\GameRepository;
 use App\Service\ImageUploader;
 use Doctrine\ORM\EntityManagerInterface;
-use League\Bundle\OAuth2ServerBundle\Entity\Client;
+use League\Bundle\OAuth2ServerBundle\Model\Client;
+use League\Bundle\OAuth2ServerBundle\ValueObject\Grant;
+use League\Bundle\OAuth2ServerBundle\ValueObject\Scope;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,7 +53,7 @@ class GamesController extends AbstractController
     #[Route('/games/new', name: 'app_games_new')]
     public function newGame(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user, ImageUploader $imageUploader): Response
     {
-        $oAuth2Client = new Client('temp', uniqid(md5), uniqid(md5));
+        $oAuth2Client = new Client('temp', uniqid(), uniqid());
         $oAuth2ClientProfile = new OAuth2ClientProfile($oAuth2Client);
         $game = new Game($user, $oAuth2ClientProfile);
 
@@ -63,7 +65,8 @@ class GamesController extends AbstractController
 
         if ($form->isSubmitted() && $form->isValid()) {
             $oAuth2Client->setName($game->getSlug());
-            $oAuth2Client->setRedirectUri($game->getUrl());
+            $oAuth2Client->setGrants(new Grant('authorization_code'));
+            $oAuth2Client->setScopes(new Scope('email'));
 
             $imageLocation = $imageUploader->uploadImage($form['imageFile']->getData(), 'game');
             $game->setPicture($imageLocation);
@@ -132,7 +135,7 @@ class GamesController extends AbstractController
                 //'client_secret' => $game->getOAuth2ClientProfile()->getClient(),
                 'redirect_uri' => $game->getUrl(),
                 'response_type' => 'code',
-                'scopes' => 'email',
+                'scope' => 'email',
             ));
         }
 
