@@ -49,8 +49,8 @@ security:
         - { path: ^/token,      roles: PUBLIC_ACCESS }
 
         # site
-        - { path: app_homepage, roles: PUBLIC_ACCESS }
-        - { path: app_games,    roles: PUBLIC_ACCESS }
+        #- { path: app_homepage, roles: PUBLIC_ACCESS }
+        - { path: ^/games,      roles: PUBLIC_ACCESS }
         - { path: ^/,           roles: ROLE_USER }
 
         # api

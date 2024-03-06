@@ -25,12 +25,12 @@ class GamesController extends AbstractController
     }
 
     #[Route('/games', name: 'app_games')]
-    public function index(Request $request, #[CurrentUser] User $user): Response
+    public function index(Request $request): Response
     {
         $games = $this->gameRepository->findBy(['isPublic' => true], ['name' => 'ASC']);
         
         if ($this->security->isGranted('ROLE_USER')) {
-            $games = $this->gameRepository->findAllVisible($user);
+            $games = $this->gameRepository->findAllVisible($this->getUser());
         }
 
         return $this->render('games/index.html.twig', [
@@ -52,22 +52,25 @@ class GamesController extends AbstractController
     public function newGame(Request $request, EntityManagerInterface $entityManager, #[CurrentUser] User $user, ImageUploader $imageUploader): Response
     {
         $oAuth2Client = new Client('temp', uniqid(md5), uniqid(md5));
-        $oAuth2ClientProfile = new OAuth2ClientProfile();
+        $oAuth2ClientProfile = new OAuth2ClientProfile($oAuth2Client);
         $game = new Game($user, $oAuth2ClientProfile);
 
         $form = $this->createForm(GameFormType::class, $game);
         $form->handleRequest($request);
 
         $oAuth2ClientId = $oAuth2Client->getIdentifier();
-        // $oAuth2ClientSecret = $oAuth2Client->getIdentifier(); // in case of a client secret
+        //$oAuth2ClientSecret = $oAuth2Client->; // in case of a client secret
 
         if ($form->isSubmitted() && $form->isValid()) {
             $oAuth2Client->setName($game->getSlug());
+            $oAuth2Client->setRedirectUri($game->getUrl());
 
-            $imageLocation = $imageUploader->uploadImage($form['imageFile']->getData(), 'pfp');
+            $imageLocation = $imageUploader->uploadImage($form['imageFile']->getData(), 'game');
             $game->setPicture($imageLocation);
             
-            $entityManager->persist($game, $oAuth2ClientProfile, $oAuth2Client);
+            $entityManager->persist($oAuth2Client);
+            $entityManager->persist($oAuth2ClientProfile);
+            $entityManager->persist($game);
             $entityManager->flush();
 
             return $this->redirectToRoute('app_games_game', ['gameSlug' => $game->getSlug()]);
@@ -126,9 +129,10 @@ class GamesController extends AbstractController
         {
             return $this->redirectToRoute('oauth2_authorize', array(
                 'client_id' => $game->getOAuth2ClientProfile()->getClient()->getIdentifier(),
+                //'client_secret' => $game->getOAuth2ClientProfile()->getClient(),
                 'redirect_uri' => $game->getUrl(),
                 'response_type' => 'code',
-                'scopes' => $game->getOAuth2ClientProfile()->getClient()->getScopes(),
+                'scopes' => 'email',
             ));
         }
 
